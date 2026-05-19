@@ -246,22 +246,12 @@
       <h2 class="list-title">Todos os <b>241</b> aprovados</h2>
     </div>
     <div class="controls">
-      <input type="search" id="search" placeholder="Buscar por nome ou inscrição…">
+      <input type="search" id="search" placeholder="Buscar nome ou inscrição…">
       <select id="ft" aria-label="Filtrar por turma"><option value="">Todas as turmas</option><option value="1">1ª CFSd 2023</option><option value="2">2ª CFSd 2024</option><option value="3">3ª CFSd 2025</option></select>
-      <span class="spacer"></span>
       <select id="pp" aria-label="Itens por página"><option value="10">10 por página</option><option value="25">25 por página</option><option value="50">50 por página</option><option value="100">100 por página</option></select>
     </div>
 
-    <div class="table-wrap"><table>
-      <thead><tr>
-        <th data-k="nome">Nome</th>
-        <th data-k="inscr">Inscrição</th>
-        <th data-k="turma">Turma</th>
-        <th data-k="pos" class="right">Posição</th>
-        <th>Edital</th>
-      </tr></thead>
-      <tbody id="tb"></tbody>
-    </table></div>
+    <div class="lb" id="tb"></div>
 
     <div class="pager">
       <div class="pager-info" id="info"></div>
@@ -345,18 +335,53 @@ function render(){
   if(page>totalPages)page=totalPages;if(page<1)page=1;
   const start=(page-1)*per,end=Math.min(start+per,rows.length);
   const pageRows=rows.slice(start,end);
-  info.innerHTML=rows.length===0?'Nenhum resultado':`Mostrando <b>${start+1}–${end}</b> de <b>${rows.length}</b> aprovados`;
-  if(!pageRows.length){tb.innerHTML='<tr><td colspan="5" class="empty">Nenhum aprovado encontrado com esses filtros</td></tr>';}
+  info.innerHTML=rows.length===0?'Nenhum resultado':'Mostrando <b>'+(start+1)+'–'+end+'</b> de <b>'+rows.length+'</b>';
+  if(!pageRows.length){tb.innerHTML='<div class="empty-lb">Nenhum aprovado encontrado com esses filtros</div>';}
   else{
-    const mob=isMobile();
-    tb.innerHTML=pageRows.map(d=>mob?renderRowMobile(d):renderRowDesktop(d)).join('');
-    tb.querySelectorAll('.copy-btn').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();copyInscr(b,b.dataset.i);}));
+    tb.innerHTML=pageRows.map(d=>{
+      const rankHtml = d.medal>0
+        ? '<span class="lb-medal m'+d.medal+'">'+d.medal+'</span>'
+        : (d.posicao
+            ? '<span class="lb-rank">'+d.posicao+'<span class="ord">º</span></span>'
+            : '<span class="lb-rank lb-rank-empty">—</span>');
+      return '<div class="lb-item" data-i="'+esc(d.inscricao)+'" data-url="'+esc(d.pdf_url||'')+'">'
+        +'<div class="lb-left">'+rankHtml+'</div>'
+        +'<div class="lb-info">'
+          +'<div class="lb-name">'+esc(d.nome_display)+'</div>'
+          +'<div class="lb-meta"><span class="dot t'+d.turma+'"></span>'+esc(TURMA_LBL[d.turma]||d.turma+'ª')+'</div>'
+        +'</div>'
+        +'<div class="lb-chevron">›</div>'
+        +'<div class="lb-drawer">'
+          +'<span class="lb-inscr">'+esc(d.inscricao)+'</span>'
+          +'<button class="lb-copy" type="button">Copiar</button>'
+          +(d.pdf_url ? '<a class="lb-edital" href="'+esc(d.pdf_url)+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 3h7v7M21 3l-9 9M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5"/></svg>Edital oficial PMES</a>' : '')
+        +'</div>'
+      +'</div>';
+    }).join('');
+    // expand on click (não no link)
+    tb.querySelectorAll('.lb-item').forEach(it=>{
+      it.addEventListener('click', function(e){
+        if(e.target.closest('a, .lb-copy')) return;
+        it.classList.toggle('expanded');
+      });
+    });
+    tb.querySelectorAll('.lb-copy').forEach(btn=>{
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        const item = btn.closest('.lb-item');
+        const val = item.dataset.i;
+        navigator.clipboard.writeText(val).then(()=>{
+          btn.textContent='Copiado';btn.classList.add('copied');
+          setTimeout(()=>{btn.textContent='Copiar';btn.classList.remove('copied');},1400);
+        });
+      });
+    });
   }
   ctrl.innerHTML='';
   if(totalPages>1){
     const mk=(txt,target,dis,act)=>{const b=document.createElement('button');b.className='pager-btn'+(act?' active':'');b.textContent=txt;b.disabled=!!dis;if(!dis&&target!==null)b.addEventListener('click',()=>{page=target;render();window.scrollTo({top:document.querySelector('.list').offsetTop-20,behavior:'smooth'});});ctrl.appendChild(b);};
     mk('‹',page-1,page===1);
-    const showPages=[];const around=isMobile()?1:2;
+    const showPages=[];const around=window.matchMedia('(max-width:540px)').matches?1:2;
     for(let i=1;i<=totalPages;i++){if(i===1||i===totalPages||(i>=page-around&&i<=page+around))showPages.push(i);else if(showPages[showPages.length-1]!=='…')showPages.push('…');}
     showPages.forEach(p=>{if(p==='…'){const s=document.createElement('span');s.className='pager-info';s.style.padding='0 4px';s.textContent='…';ctrl.appendChild(s);}else mk(String(p),p,false,p===page);});
     mk('›',page+1,page===totalPages);

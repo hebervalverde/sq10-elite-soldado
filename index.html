@@ -130,6 +130,47 @@ footer a{color:var(--gold-hot);text-decoration:none;font-weight:500;word-break:b
 footer a:hover{text-decoration:underline;}
 .footer-inner b{color:#fff;font-weight:500;}
 .err-bar{position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:#fff;padding:12px;font-family:system-ui;font-size:13px;z-index:9999;}
+
+/* TABELA DESKTOP (>= 721px) — mantém leaderboard no mobile */
+@media(min-width:721px){
+  .lb{padding:0;}
+  .lb-item{display:none;}
+  .tbl-wrap{display:block;}
+}
+@media(max-width:720px){
+  .tbl-wrap{display:none !important;}
+  .lb-item{display:grid;}
+}
+.tbl-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);display:none;}
+.tbl{width:100%;border-collapse:collapse;}
+.tbl thead{background:var(--navy-deep);color:#fff;}
+.tbl th{text-align:left;padding:18px 20px;font-family:var(--font-h);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.18em;color:rgba(255,255,255,0.78);}
+.tbl tbody tr{border-bottom:1px solid var(--border-soft);transition:background .15s;}
+.tbl tbody tr:last-child{border-bottom:none;}
+.tbl tbody tr:hover{background:var(--paper-tint);}
+.tbl td{padding:18px 20px;font-size:15px;vertical-align:middle;}
+.tbl .c-nome{font-family:var(--font-h);font-weight:600;color:var(--navy-deep);font-size:17px;letter-spacing:-0.005em;display:flex;align-items:center;gap:14px;}
+.tbl .c-inscr{font-family:'SF Mono',Monaco,monospace;font-size:13.5px;color:var(--ink-soft);font-weight:500;white-space:nowrap;}
+.tbl .c-inscr .copy{margin-left:10px;background:var(--paper-tint);border:none;cursor:pointer;color:var(--muted);padding:5px 10px;border-radius:5px;font-size:10px;font-family:'SF Mono',Monaco,monospace;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;transition:all .15s;}
+.tbl .c-inscr .copy:hover{background:var(--navy-deep);color:#fff;}
+.tbl .c-inscr .copy.copied{background:var(--green);color:#fff;}
+.tbl .c-turma{font-family:var(--font-h);font-weight:600;font-size:14px;color:var(--ink-soft);display:flex;align-items:center;gap:10px;white-space:nowrap;}
+.tbl .c-turma .d{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;}
+.tbl .c-turma .d.t1{background:var(--blue);box-shadow:0 0 0 3px rgba(35,81,255,0.15);}
+.tbl .c-turma .d.t2{background:var(--gold);box-shadow:0 0 0 3px rgba(212,168,65,0.18);}
+.tbl .c-turma .d.t3{background:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,0.15);}
+.tbl .c-pos{font-family:var(--font-h);font-weight:700;font-size:19px;color:var(--navy-deep);font-variant-numeric:tabular-nums;letter-spacing:-0.02em;white-space:nowrap;}
+.tbl .c-pos .o{font-size:12px;color:var(--muted);font-weight:500;}
+.tbl .c-pos.empty{color:var(--muted-soft);font-weight:300;font-size:18px;}
+.tbl .c-doc a{display:inline-flex;align-items:center;gap:8px;color:var(--blue);text-decoration:none;font-weight:600;font-size:14px;padding:8px 16px;border:1px solid var(--blue-pale);border-radius:6px;transition:all .15s;background:#fff;}
+.tbl .c-doc a:hover{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 4px 12px rgba(35,81,255,0.25);}
+.tbl .c-doc a svg{width:14px;height:14px;}
+.tbl-medal{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;font-family:var(--font-h);font-weight:800;font-size:13px;color:#fff;position:relative;flex-shrink:0;}
+.tbl-medal::after{content:'';position:absolute;inset:2px;border-radius:50%;border:0.5px solid rgba(255,255,255,0.4);}
+.tbl-medal.m1{background:linear-gradient(135deg,#f4c659,#d4a841 60%,#a37d1f);box-shadow:0 2px 8px rgba(212,168,65,0.5);}
+.tbl-medal.m2{background:linear-gradient(135deg,#e5e7eb,#b4bcc8 60%,#7b8694);}
+.tbl-medal.m3{background:linear-gradient(135deg,#e5a372,#c77e48 60%,#8b5a2e);}
+
 </style></head>
 <body>
 
@@ -182,6 +223,12 @@ footer a:hover{text-decoration:underline;}
       <select id="ft"><option value="">Todas as turmas</option><option value="1">1ª CFSd 2023</option><option value="2">2ª CFSd 2024</option><option value="3">3ª CFSd 2025</option></select>
       <select id="pp"><option value="10">10 por página</option><option value="25">25 por página</option><option value="50">50 por página</option><option value="100">100 por página</option></select>
     </div>
+    <div class="tbl-wrap" id="tbl-wrap">
+  <table class="tbl">
+    <thead><tr><th>Nome</th><th>Inscrição</th><th>Turma</th><th>Posição</th><th>Documento</th></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
     <div class="lb" id="tb"></div>
     <div class="pager">
       <div class="pager-info" id="info"></div>
@@ -265,6 +312,25 @@ window.addEventListener('error', function(e){
     + '</div>';
   }
 
+  function buildRow(d){
+    var medal='';
+    if(d.medal===1) medal='<span class="tbl-medal m1">1</span>';
+    else if(d.medal===2) medal='<span class="tbl-medal m2">2</span>';
+    else if(d.medal===3) medal='<span class="tbl-medal m3">3</span>';
+    var pos = d.posicao
+      ? '<td class="c-pos">'+d.posicao+'<span class="o">º</span></td>'
+      : '<td class="c-pos empty">—</td>';
+    var doc = d.pdf_url
+      ? '<td class="c-doc"><a href="'+esc(d.pdf_url)+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 3h7v7M21 3l-9 9M21 14v5a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h5"/></svg>Edital</a></td>'
+      : '<td class="c-doc">—</td>';
+    return '<tr data-i="'+esc(d.inscricao)+'">'
+      +'<td class="c-nome">'+medal+'<span>'+esc(d.nome_display)+'</span></td>'
+      +'<td class="c-inscr">'+esc(d.inscricao)+'<button class="copy" type="button">copiar</button></td>'
+      +'<td class="c-turma"><span class="d t'+d.turma+'"></span>'+esc(TURMA_LBL[d.turma]||(d.turma+'ª'))+'</td>'
+      +pos+doc
+    +'</tr>';
+  }
+
   function render(){
     var rows = getFiltered();
     var per = parseInt(pp.value, 10);
@@ -275,11 +341,14 @@ window.addEventListener('error', function(e){
     var end = Math.min(start+per, rows.length);
     var pageRows = rows.slice(start, end);
 
-    info.innerHTML = rows.length===0 ? 'Nenhum resultado' : 'Mostrando <b>'+(start+1)+'–'+end+'</b> de <b>'+rows.length+'</b>';
+    info.innerHTML = rows.length===0 ? 'Nenhum resultado' : 'Mostrando <b>'+(start+1)+'–'+end+'</b> de <b>'+rows.length+'</b> aprovados';
 
+    var tbody = document.getElementById('tbody');
     if(!pageRows.length){
       tb.innerHTML = '<div class="empty-lb">Nenhum aprovado encontrado com esses filtros</div>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-lb">Nenhum aprovado encontrado com esses filtros</td></tr>';
     } else {
+      // Mobile leaderboard
       tb.innerHTML = pageRows.map(buildItem).join('');
       tb.querySelectorAll('.lb-item').forEach(function(it){
         it.addEventListener('click', function(e){
@@ -295,6 +364,19 @@ window.addEventListener('error', function(e){
             btn.textContent = 'Copiado';
             btn.classList.add('copied');
             setTimeout(function(){btn.textContent='Copiar';btn.classList.remove('copied');}, 1400);
+          });
+        });
+      });
+      // Desktop table
+      tbody.innerHTML = pageRows.map(buildRow).join('');
+      tbody.querySelectorAll('.copy').forEach(function(btn){
+        btn.addEventListener('click', function(e){
+          e.stopPropagation();
+          var val = btn.closest('tr').dataset.i;
+          navigator.clipboard.writeText(val).then(function(){
+            btn.textContent = 'copiado';
+            btn.classList.add('copied');
+            setTimeout(function(){btn.textContent='copiar';btn.classList.remove('copied');}, 1400);
           });
         });
       });

@@ -131,17 +131,17 @@ footer a:hover{text-decoration:underline;}
 .footer-inner b{color:#fff;font-weight:500;}
 .err-bar{position:fixed;bottom:0;left:0;right:0;background:#dc2626;color:#fff;padding:12px;font-family:system-ui;font-size:13px;z-index:9999;}
 
-/* TABELA DESKTOP (>= 721px) — mantém leaderboard no mobile */
+/* RESPONSIVE: leaderboard mobile vs tabela desktop */
+.tbl-wrap{display:none;}
+.lb{display:block;}
+
 @media(min-width:721px){
-  .lb{padding:0;}
-  .lb-item{display:none;}
   .tbl-wrap{display:block;}
+  .lb{display:none;}
 }
-@media(max-width:720px){
-  .tbl-wrap{display:none !important;}
-  .lb-item{display:grid;}
-}
-.tbl-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);display:none;}
+
+/* TABELA DESKTOP styling */
+.tbl-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
 .tbl{width:100%;border-collapse:collapse;}
 .tbl thead{background:var(--navy-deep);color:#fff;}
 .tbl th{text-align:left;padding:18px 20px;font-family:var(--font-h);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.18em;color:rgba(255,255,255,0.78);}
